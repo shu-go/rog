@@ -25,6 +25,8 @@ const (
 	Lshortfile    = log.Lshortfile
 	LUTC          = log.LUTC
 	LstdFlags     = log.LstdFlags
+
+	Lcompat = 1 << 8
 )
 
 func init() {
@@ -116,6 +118,17 @@ func (l *logger) Print(v ...interface{}) {
 		return
 	}
 
+	if l.viaExposed {
+		l.outputHeader(3)
+	} else {
+		l.outputHeader(2)
+	}
+
+	if l.flag&Lcompat == 0 {
+		fmt.Fprintln(l.out, values...)
+		return
+	}
+
 	if l.bbuf == nil {
 		l.bbuf = new(bytes.Buffer)
 	} else {
@@ -132,7 +145,7 @@ func (l *logger) Print(v ...interface{}) {
 		} else {
 			l.bbuf.WriteByte(' ')
 		}
-		fmt.Fprintf(l.bbuf, "%v", vv)
+		fmt.Fprint(l.bbuf, vv)
 
 		prevIsString = isString
 	}
@@ -143,11 +156,8 @@ func (l *logger) Print(v ...interface{}) {
 		l.bbuf.WriteByte('\n')
 	}
 
-	if l.viaExposed {
-		l.output(3)
-	} else {
-		l.output(2)
-	}
+	l.bbuf.WriteTo(l.out)
+
 }
 
 func (l *logger) Printf(format string, v ...interface{}) {
@@ -169,6 +179,17 @@ func (l *logger) Printf(format string, v ...interface{}) {
 		return
 	}
 
+	if l.viaExposed {
+		l.outputHeader(3)
+	} else {
+		l.outputHeader(2)
+	}
+
+	if l.flag&Lcompat == 0 {
+		fmt.Fprintln(l.out, values...)
+		return
+	}
+
 	if l.bbuf == nil {
 		l.bbuf = new(bytes.Buffer)
 	} else {
@@ -182,14 +203,10 @@ func (l *logger) Printf(format string, v ...interface{}) {
 		l.bbuf.WriteByte('\n')
 	}
 
-	if l.viaExposed {
-		l.output(3)
-	} else {
-		l.output(2)
-	}
+	l.bbuf.WriteTo(l.out)
 }
 
-func (l *logger) output(calldepth int) {
+func (l *logger) outputHeader(calldepth int) {
 	if l.out == nil {
 		return
 	}
@@ -274,7 +291,13 @@ func (l *logger) output(calldepth int) {
 		if l.flag&Lmicroseconds != 0 {
 			micro := (now.Nanosecond() / 1000) % 1000000
 			l.hbuf.WriteByte('.')
-			fmt.Fprintf(l.hbuf, "%06d", micro)
+			//fmt.Fprintf(l.hbuf, "%06d", micro)
+			a := d2tbl[int(micro/10000)]
+			b := d2tbl[int(micro/100)%100]
+			c := d2tbl[int(micro)%100]
+			l.hbuf.Write(a[:])
+			l.hbuf.Write(b[:])
+			l.hbuf.Write(c[:])
 		}
 
 		l.hbuf.WriteByte(' ')
@@ -292,11 +315,13 @@ func (l *logger) output(calldepth int) {
 			file = filepath.Base(file)
 		}
 		fmt.Fprintf(l.hbuf, "%s:%d: ", file, line)
+		//l.hbuf.Write([]byte(file))
+		//l.hbuf.WriteByte(':')
+		//writePositiveInt(line, l.hbuf)
+		//l.hbuf.WriteByte(' ')
 	}
 
-	//l.hbuf.Write([]byte(s))
 	l.hbuf.WriteTo(l.out)
-	l.bbuf.WriteTo(l.out)
 }
 
 func (l *logger) SetPrefix(prefix string) {
@@ -327,4 +352,37 @@ func (l *logger) SetOutput(out io.Writer) {
 	l.mu.Lock()
 	l.out = out
 	l.mu.Unlock()
+}
+
+// from log.itoa
+func writePositiveInt(v int, out io.Writer) {
+	if v <= 0 {
+		out.Write([]byte{'0'})
+		return
+	}
+
+	var buf [20]byte
+	for i := len(buf) - 1; i >= 0; i -= 2 {
+		/*
+			buf[i] = '0' + byte(v%10)
+			v /= 10
+			if v == 0 {
+				out.Write(buf[i:])
+				return
+			}
+		*/
+		d2 := d2tbl[v%100]
+		buf[i] = d2[1]
+		buf[i-1] = d2[0]
+		v /= 100
+		if v == 0 {
+			if d2[0] == '0' {
+				out.Write(buf[i:])
+			} else {
+				out.Write(buf[i-1:])
+			}
+			return
+		}
+	}
+	out.Write(buf[:])
 }
