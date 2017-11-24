@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	//"io/ioutil"
 	"log"
 	"path/filepath"
 	"runtime"
-	//"strconv"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -50,7 +49,7 @@ type logger struct {
 	prefix string
 	flag   int
 
-	hbuf *bytes.Buffer // prefix ~ file line
+	hbuf []byte        // prefix ~ file line
 	bbuf *bytes.Buffer // format and v...
 
 	cache struct {
@@ -212,13 +211,13 @@ func (l *logger) outputHeader(calldepth int) {
 	}
 
 	if l.hbuf == nil {
-		l.hbuf = new(bytes.Buffer)
+		l.hbuf = make([]byte, 0, 128)
 	} else {
-		l.hbuf.Reset()
+		l.hbuf = l.hbuf[:0]
 	}
 
 	if l.prefix != "" {
-		l.hbuf.Write([]byte(l.prefix))
+		l.hbuf = append(l.hbuf, l.prefix...)
 	}
 
 	var now time.Time
@@ -261,7 +260,7 @@ func (l *logger) outputHeader(calldepth int) {
 
 			l.cache.year, l.cache.month, l.cache.day = year, int(month), day
 		}
-		l.hbuf.Write(l.cache.dateCache)
+		l.hbuf = append(l.hbuf, l.cache.dateCache...)
 	}
 	if l.flag&Ltime != 0 {
 		hour, minute, second := now.Clock()
@@ -285,22 +284,22 @@ func (l *logger) outputHeader(calldepth int) {
 			l.cache.timeCache[4] = d2tbl[minute][1]
 			l.cache.timeCache[5] = ':'
 		}
-		l.hbuf.Write(l.cache.timeCache)
-		l.hbuf.Write(d2tbl[second][:])
+		l.hbuf = append(l.hbuf, l.cache.timeCache...)
+		l.hbuf = append(l.hbuf, d2tbl[second][:]...)
 
 		if l.flag&Lmicroseconds != 0 {
 			micro := (now.Nanosecond() / 1000) % 1000000
-			l.hbuf.WriteByte('.')
+			l.hbuf = append(l.hbuf, '.')
 			//fmt.Fprintf(l.hbuf, "%06d", micro)
 			a := d2tbl[int(micro/10000)]
 			b := d2tbl[int(micro/100)%100]
 			c := d2tbl[int(micro)%100]
-			l.hbuf.Write(a[:])
-			l.hbuf.Write(b[:])
-			l.hbuf.Write(c[:])
+			l.hbuf = append(l.hbuf, a[:]...)
+			l.hbuf = append(l.hbuf, b[:]...)
+			l.hbuf = append(l.hbuf, c[:]...)
 		}
 
-		l.hbuf.WriteByte(' ')
+		l.hbuf = append(l.hbuf, ' ')
 	}
 
 	if l.flag&(Llongfile|Lshortfile) != 0 {
@@ -314,14 +313,12 @@ func (l *logger) outputHeader(calldepth int) {
 		if l.flag&Lshortfile != 0 {
 			file = filepath.Base(file)
 		}
-		fmt.Fprintf(l.hbuf, "%s:%d: ", file, line)
-		//l.hbuf.Write([]byte(file))
-		//l.hbuf.WriteByte(':')
-		//writePositiveInt(line, l.hbuf)
-		//l.hbuf.WriteByte(' ')
+		//fmt.Fprintf(l.hbuf, "%s:%d: ", file, line)
+		l.hbuf = append(l.hbuf, file...)
+		l.hbuf = strconv.AppendInt(l.hbuf, int64(line), 10)
 	}
 
-	l.hbuf.WriteTo(l.out)
+	l.out.Write(l.hbuf)
 }
 
 func (l *logger) SetPrefix(prefix string) {
@@ -352,37 +349,4 @@ func (l *logger) SetOutput(out io.Writer) {
 	l.mu.Lock()
 	l.out = out
 	l.mu.Unlock()
-}
-
-// from log.itoa
-func writePositiveInt(v int, out io.Writer) {
-	if v <= 0 {
-		out.Write([]byte{'0'})
-		return
-	}
-
-	var buf [20]byte
-	for i := len(buf) - 1; i >= 0; i -= 2 {
-		/*
-			buf[i] = '0' + byte(v%10)
-			v /= 10
-			if v == 0 {
-				out.Write(buf[i:])
-				return
-			}
-		*/
-		d2 := d2tbl[v%100]
-		buf[i] = d2[1]
-		buf[i-1] = d2[0]
-		v /= 100
-		if v == 0 {
-			if d2[0] == '0' {
-				out.Write(buf[i:])
-			} else {
-				out.Write(buf[i-1:])
-			}
-			return
-		}
-	}
-	out.Write(buf[:])
 }
