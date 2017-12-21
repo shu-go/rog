@@ -186,7 +186,11 @@ func (l *logger) Printf(format string, v ...interface{}) {
 	}
 
 	if l.flag&Lcompat == 0 {
-		fmt.Fprintln(l.out, values...)
+		if strings.HasSuffix(format, "\n") {
+			fmt.Fprintf(l.out, format, values...)
+		} else {
+			fmt.Fprintf(l.out, format+"\n", values...)
+		}
 		return
 	}
 
