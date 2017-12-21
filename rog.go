@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -315,7 +316,10 @@ func (l *logger) outputHeader(calldepth int) {
 		}
 		//fmt.Fprintf(l.hbuf, "%s:%d: ", file, line)
 		l.hbuf = append(l.hbuf, file...)
+		l.hbuf = append(l.hbuf, ':')
 		l.hbuf = strconv.AppendInt(l.hbuf, int64(line), 10)
+		l.hbuf = append(l.hbuf, ':')
+		l.hbuf = append(l.hbuf, ' ')
 	}
 
 	l.out.Write(l.hbuf)
