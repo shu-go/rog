@@ -29,11 +29,11 @@ func TestPrint(t *testing.T) {
 
 	stdl.Print("hello")
 	l.Print("hello")
-	gotwant.Test(t, buf.String(), stdbuf.String(), "%q")
+	gotwant.Test(t, buf.String(), stdbuf.String(), gotwant.Format("%q"))
 
 	stdl.Print("hello", "world")
 	l.Print("hello", "world")
-	gotwant.Test(t, buf.String(), stdbuf.String(), "%q")
+	gotwant.Test(t, buf.String(), stdbuf.String(), gotwant.Format("%q"))
 }
 
 func TestPrintf(t *testing.T) {
@@ -45,15 +45,15 @@ func TestPrintf(t *testing.T) {
 
 	stdl.Printf("hello")
 	l.Printf("hello")
-	gotwant.Test(t, buf.String(), stdbuf.String(), "%q")
+	gotwant.Test(t, buf.String(), stdbuf.String(), gotwant.Format("%q"))
 
 	stdl.Printf("hello", "world")
 	l.Printf("hello", "world")
-	gotwant.Test(t, buf.String(), stdbuf.String(), "%q")
+	gotwant.Test(t, buf.String(), stdbuf.String(), gotwant.Format("%q"))
 
-	stdl.Printf("%v, %v", "hello", "world")
-	l.Printf("%v, %v", "hello", "world")
-	gotwant.Test(t, buf.String(), stdbuf.String(), "%q")
+	stdl.Printf("aaa %v, %v", "hello", "world")
+	l.Printf("aaa %v, %v", "hello", "world")
+	gotwant.Test(t, buf.String(), stdbuf.String(), gotwant.Format("%q"))
 }
 
 func TestBind(t *testing.T) {
@@ -66,16 +66,16 @@ func TestBind(t *testing.T) {
 
 	stdl.Print("[L]abc")
 	ll.Print("abc")
-	gotwant.Test(t, buf.String(), stdbuf.String(), "%q")
+	gotwant.Test(t, buf.String(), stdbuf.String(), gotwant.Format("%q"))
 
 	lll := ll.Bind(123, "{L}")
 	stdl.Print("[L] 123 {L}def")
 	lll.Print("def")
-	gotwant.Test(t, buf.String(), stdbuf.String(), "%q")
+	gotwant.Test(t, buf.String(), stdbuf.String(), gotwant.Format("%q"))
 
 	stdl.Print("ghi")
 	l.Print("ghi")
-	gotwant.Test(t, buf.String(), stdbuf.String(), "%q")
+	gotwant.Test(t, buf.String(), stdbuf.String(), gotwant.Format("%q"))
 }
 
 type counterHook struct {
@@ -124,13 +124,13 @@ func TestPrefix(t *testing.T) {
 
 	stdl.Print("a", "b", "c")
 	l.Print("a", "b", "c")
-	gotwant.Test(t, buf.String(), stdbuf.String(), "%q")
+	gotwant.Test(t, buf.String(), stdbuf.String(), gotwant.Format("%q"))
 
 	stdl.SetPrefix("[Info]")
 	l.SetPrefix("[Info]")
 	stdl.Print("a", "b", "c")
 	l.Print("a", "b", "c")
-	gotwant.Test(t, buf.String(), stdbuf.String(), "%q")
+	gotwant.Test(t, buf.String(), stdbuf.String(), gotwant.Format("%q"))
 }
 
 func TestNil(t *testing.T) {
