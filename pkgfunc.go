@@ -7,13 +7,14 @@ import (
 var (
 	std     = New(os.Stderr, "", LstdFlags)
 	Discard = New(nil, "", 0)
-	debug   = std
+	debug   = New(os.Stderr, "", LstdFlags|Lshortfile)
 
 	debugging = false
 )
 
 func init() {
 	std.viaExposed = true
+	debug.viaExposed = true
 }
 
 func EnableDebug(optLogger ...*logger) {
