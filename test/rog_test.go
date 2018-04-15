@@ -47,8 +47,8 @@ func TestPrintf(t *testing.T) {
 	l.Printf("hello")
 	gotwant.Test(t, buf.String(), stdbuf.String(), gotwant.Format("%q"))
 
-	stdl.Printf("hello", "world")
-	l.Printf("hello", "world")
+	stdl.Print("hello", "world")
+	l.Print("hello", "world")
 	gotwant.Test(t, buf.String(), stdbuf.String(), gotwant.Format("%q"))
 
 	stdl.Printf("aaa %v, %v", "hello", "world")
