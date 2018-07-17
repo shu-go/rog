@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/shu/gotwant"
-	"bitbucket.org/shu/rog"
+	"bitbucket.org/shu_go/gotwant"
+	"bitbucket.org/shu_go/rog"
 )
 
 func init() {
