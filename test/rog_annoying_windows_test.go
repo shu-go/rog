@@ -3,7 +3,7 @@ package test
 import (
 	"testing"
 
-	"bitbucket.org/shu_go/rog"
+	"github.com/shu-go/rog"
 )
 
 func DoNotTestAnnoyingHook(t *testing.T) {
