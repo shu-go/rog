@@ -24,6 +24,14 @@ func EnableDebug(optLogger ...*logger) {
 	}
 }
 
+func EnableDebugIf(b bool, optLogger ...*logger) {
+	if b {
+		EnableDebug(optLogger...)
+	} else {
+		DisableDebug()
+	}
+}
+
 func DisableDebug() {
 	debugging = false
 }
